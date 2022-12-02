@@ -1,5 +1,5 @@
 def main():
-    with open("Day01/day01a.txt") as f:
+    with open("Day01/day01.txt") as f:
         lines = f.readlines()
 
     max_count = 0

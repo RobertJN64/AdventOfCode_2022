@@ -8,17 +8,15 @@ with open(fpath + "/day" + x + "a.py", "w+") as f:
     with open("template.py") as g:
         lines = g.readlines()
         for line in lines:
-            f.write(line.replace("rep_DAY_CODE", fpath + "/day" + x + "a.txt"))
+            f.write(line.replace("rep_DAY_CODE", fpath + "/day" + x + ".txt"))
 
 with open(fpath + "/day" + x + "b.py", "w+") as f:
     with open("template.py") as g:
         lines = g.readlines()
         for line in lines:
-            f.write(line.replace("rep_DAY_CODE", fpath + "/day" + x + "b.txt"))
+            f.write(line.replace("rep_DAY_CODE", fpath + "/day" + x + ".txt"))
 
-with open(fpath + "/day" + x + "a.txt", "w+"):
-    pass
-with open(fpath + "/day" + x + "b.txt", "w+"):
+with open(fpath + "/day" + x + ".txt", "w+"):
     pass
 
 yn = input("Configure runtime? y/n ")

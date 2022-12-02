@@ -1,5 +1,5 @@
 def main():
-    with open("Day01/day01b.txt") as f:
+    with open("Day01/day01.txt") as f:
         lines = f.readlines()
 
     counts = []
