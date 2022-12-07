@@ -30,3 +30,4 @@ if yn == "y":
         f.write("from " + fpath + " import day" + x + "b as prog\n")
         f.write("print('Running day " + x + " B')\n")
         f.write("prog.main()\n")
+    os.system("git add Day" + x)
