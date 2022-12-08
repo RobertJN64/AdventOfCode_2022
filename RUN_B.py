@@ -1,3 +1,3 @@
-from Day08 import day08b as prog
-print('Running day 08 B')
+from Day09 import day09b as prog
+print('Running day 09 B')
 prog.main()
