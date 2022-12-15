@@ -1,3 +1,3 @@
-from Day15 import day15a as prog
-print('Running day 15 A')
+from Day16 import day16a as prog
+print('Running day 16 A')
 prog.main()
