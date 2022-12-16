@@ -1,8 +1,5 @@
 import copy
 
-cutoff_loc_AFR = [{} for _ in range(31)]
-cutoff_loc_TFR = [{} for _ in range(31)]
-
 
 class Valve:
     def __init__(self, line):
@@ -55,14 +52,6 @@ class Q:
             self.g_location_list = False
         self.location_list.add(self.location)
         self.timer += skipahead
-
-        cafr = cutoff_loc_AFR[self.timer].get(self.location, -1)
-        ctfr = cutoff_loc_TFR[self.timer].get(self.location, -1)
-        if self.active_flow_rate > cafr and self.total_flow_rate > ctfr:
-            cutoff_loc_AFR[self.timer][self.location] = self.active_flow_rate
-            cutoff_loc_TFR[self.timer][self.location] = self.total_flow_rate
-
-        return not (self.active_flow_rate < cafr and self.total_flow_rate < ctfr)
 
     def open_valve(self, valve_db):
         if self.g_open_valves:
@@ -150,9 +139,9 @@ def main():
         if q.location not in q.open_valves and valve_db[q.location].flow_rate != 0:
             def open_valve():
                 qt = Q(q.location, q.timer, q.open_valves, q.total_flow_rate, q.active_flow_rate, q.location_list)
-                if qt.update_flow_counter():
-                    qt.open_valve(valve_db)
-                    add_q(qt)
+                qt.update_flow_counter()
+                qt.open_valve(valve_db)
+                add_q(qt)
 
             open_valve()
 
@@ -162,9 +151,9 @@ def main():
                     if q.timer + t.length > 30:
                         return
                     qt = Q(q.location, q.timer, q.open_valves, q.total_flow_rate, q.active_flow_rate, q.location_list)
-                    if qt.update_flow_counter(t.length):
-                        qt.location = target
-                        add_q(qt)
+                    qt.update_flow_counter(t.length)
+                    qt.location = target
+                    add_q(qt)
 
             check_travel(t.point_a, t.point_b)
             check_travel(t.point_b, t.point_a)
