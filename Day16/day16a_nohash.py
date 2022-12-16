@@ -45,13 +45,13 @@ class Q:
             self.location_list = location_list
             self.g_location_list = True
 
-    def update_flow_counter(self, skipahead = 1):
-        self.total_flow_rate += self.active_flow_rate * skipahead
+    def update_flow_counter(self):
+        self.total_flow_rate += self.active_flow_rate
         if self.g_location_list:
             self.location_list = copy.copy(self.location_list)
             self.g_location_list = False
         self.location_list.append(self.location)
-        self.timer += skipahead
+        self.timer += 1
 
     def open_valve(self, valve_db):
         if self.g_open_valves:
@@ -106,17 +106,6 @@ def main():
 
     print(len(tunnels), tunnels)
 
-    tunnel_hash_table = {}
-    for t in tunnels:
-        l = tunnel_hash_table.get(t.point_a, [])
-        l.append(t)
-        tunnel_hash_table[t.point_a] = l
-        l = tunnel_hash_table.get(t.point_b, [])
-        l.append(t)
-        tunnel_hash_table[t.point_b] = l
-    print(tunnel_hash_table)
-
-
     queue = [Q()]
     best_flow = 0
 
@@ -133,7 +122,7 @@ def main():
     while queue:
         q = queue.pop()
         counter += 1
-        if counter % 100000 == 0:
+        if counter % 10000 == 0:
             print(len(queue), queue[0].timer)
 
         if q.location not in q.open_valves and valve_db[q.location].flow_rate != 0:
@@ -145,13 +134,14 @@ def main():
 
             open_valve()
 
-        for t in tunnel_hash_table[q.location]:
+        for t in tunnels:
             def check_travel(current, target):
                 if current == q.location and target not in q.location_list:
                     if q.timer + t.length > 30:
                         return
                     qt = Q(q.location, q.timer, q.open_valves, q.total_flow_rate, q.active_flow_rate, q.location_list)
-                    qt.update_flow_counter(t.length)
+                    for _ in range(t.length):
+                        qt.update_flow_counter()
                     qt.location = target
                     add_q(qt)
 
