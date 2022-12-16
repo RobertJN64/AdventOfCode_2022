@@ -1,0 +1,64 @@
+import copy
+
+class Valve:
+    def __init__(self, line):
+        line = line.replace(",", "").replace("=", " ").replace(";", "").strip().split(" ")
+        self.id = line[1]
+        self.flow_rate = int(line[5])
+        self.is_on = False
+        self.paths = line[10:]
+
+    def __repr__(self):
+        return f"Valve {self.id} with flow rate {self.flow_rate} is on: {self.is_on} | tunnels: {self.paths}"
+
+class Q:
+    def __init__(self, valve_db: dict[str, Valve]):
+        self.loc = 'AA'
+        self.total_flow = 0
+        self.flow_per_min = 0
+        self.last_walk = ""
+        self.time = 0
+        self.valve_db = valve_db
+
+    def update(self):
+        self.total_flow += self.flow_per_min
+        self.time += 1
+
+def main():
+    with open("Day16/day16.txt") as f:
+        lines = f.readlines()
+
+    valve_db = {}
+    for line in lines:
+        v = Valve(line)
+        valve_db[v.id] = v
+
+    queue = [Q(valve_db)]
+    max_flow = 0
+    while queue:
+
+        q = queue.pop(0)
+        print(len(queue))
+
+        if q.time == 30:
+            if q.total_flow >= max_flow:
+
+                print("Solution found with final flow: ", q.total_flow)
+                max_flow = q.total_flow
+            continue
+
+        if not q.valve_db[q.loc].is_on:
+            tq = copy.deepcopy(q)
+            tq.valve_db[q.loc].is_on = True
+            tq.flow_per_min += tq.valve_db[q.loc].flow_rate
+            tq.last_walk = ""
+            tq.update()
+            queue.append(tq)
+
+        for path in q.valve_db[q.loc].paths:
+            if q.last_walk != path:
+                tq = copy.deepcopy(q)
+                tq.last_walk = q.loc
+                q.loc = path
+                tq.update()
+                queue.append(tq)
