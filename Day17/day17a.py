@@ -21,7 +21,8 @@ rock_shapes = [
 SIM_CONSTANT = 6
 
 def main():
-    pattern = '>>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>'
+    with open("Day17/day17.txt") as f:
+        pattern = f.read().strip()
     p_index = 0
 
     layers = ['#' * 7]
