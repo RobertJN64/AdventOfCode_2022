@@ -1,4 +1,4 @@
 def main():
-    with open("Day17/day17.txt") as f:
+    with open("Day18/day18.txt") as f:
         lines = f.readlines()
     print(lines[0:10])
