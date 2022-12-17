@@ -1,6 +1,9 @@
+import copy
+
 END_TIME = 26 * 2 - 2
 
-cutoff_loc_AFR = [{} for _ in range(END_TIME + 2)]
+cutoff_loc_AFR_1 = [{} for _ in range(END_TIME + 2)]
+cutoff_loc_AFR_2 = [{} for _ in range(END_TIME + 2)]
 cutoff_loc_TFR = [{} for _ in range(END_TIME + 2)]
 
 class Valve:
@@ -25,15 +28,20 @@ class Tunnel:
 
 
 class Q:
-    def __init__(self, location_1='AA', location_2='AA', timer=0, open_valves='', total_flow_rate=0,
-                 active_flow_rate_1=0, active_flow_rate_2=0, location_list_1='', location_list_2='',
+    def __init__(self, location_1='AA', location_2='AA', timer=0, open_valves=None, total_flow_rate=0,
+                 active_flow_rate_1=0, active_flow_rate_2=0, location_list_1=None, location_list_2=None,
                  done_1=False, done_2=False):
         self.location_1 = location_1
         self.location_2 = location_2
 
         self.timer = timer
 
-        self.open_valves = open_valves
+        if open_valves is None:
+            self.open_valves = []
+            self.g_open_valves = False
+        else:
+            self.open_valves = open_valves
+            self.g_open_valves = True
 
         self.active_flow_rate_1 = active_flow_rate_1
         self.active_flow_rate_2 = active_flow_rate_2
@@ -42,46 +50,63 @@ class Q:
         self.done_1 = done_1
         self.done_2 = done_2
 
-        self.location_list_1 = location_list_1
-        self.location_list_2 = location_list_2
+        def loc_list(x):
+            if x is None:
+                return set(), False
+            else:
+                return x, True
+        self.location_list_1, self.g_location_list_1 = loc_list(location_list_1)
+        self.location_list_2, self.g_location_list_2 = loc_list(location_list_2)
 
     def update_flow_counter(self):
         if self.timer%2 == 0:
-            self.location_list_1 += '-' + self.location_1
+            if self.g_location_list_1:
+                self.location_list_1 = copy.copy(self.location_list_1)
+                self.g_location_list_1 = False
+            self.location_list_1.add(self.location_1)
+
             self.total_flow_rate += self.active_flow_rate_1 + self.active_flow_rate_2
 
         else:
-            self.location_list_2 += '-' + self.location_2
+            if self.g_location_list_2:
+                self.location_list_2 = copy.copy(self.location_list_2)
+                self.g_location_list_2 = False
+            self.location_list_2.add(self.location_2)
 
         self.timer += 1
 
-        cafr_1 = cutoff_loc_AFR[self.timer].get(self.location_1, -1)
-        cafr_2 = cutoff_loc_AFR[self.timer].get(self.location_2, -1)
-        ctfr_1 = cutoff_loc_TFR[self.timer].get(self.location_1, -1)
-        ctfr_2 = cutoff_loc_TFR[self.timer].get(self.location_2, -1)
+        c_loc_1 = self.location_1 + self.location_2
+        c_loc_2 = self.location_2 + self.location_1
+        cafr_1 = cutoff_loc_AFR_1[self.timer].get(c_loc_1, -1)
+        cafr_2 = cutoff_loc_AFR_2[self.timer].get(c_loc_1, -1)
+        ctfr = cutoff_loc_TFR[self.timer].get(c_loc_1, -1)
+        if self.active_flow_rate_1 > cafr_1 and self.active_flow_rate_2 > cafr_2 and self.total_flow_rate > ctfr:
+            cutoff_loc_AFR_1[self.timer][c_loc_1] = self.active_flow_rate_1
+            cutoff_loc_AFR_2[self.timer][c_loc_1] = self.active_flow_rate_2
+            cutoff_loc_TFR[self.timer][c_loc_1] = self.total_flow_rate
+            cutoff_loc_AFR_1[self.timer][c_loc_2] = self.active_flow_rate_1
+            cutoff_loc_AFR_2[self.timer][c_loc_2] = self.active_flow_rate_2
+            cutoff_loc_TFR[self.timer][c_loc_2] = self.total_flow_rate
 
-        if (self.active_flow_rate_1 > cafr_1 and self.active_flow_rate_2 > cafr_2 and
-                self.total_flow_rate > ctfr_1 and self.total_flow_rate > ctfr_2):
 
-            cutoff_loc_AFR[self.timer][self.location_1] = self.active_flow_rate_1
-            cutoff_loc_AFR[self.timer][self.location_2] = self.active_flow_rate_2
-            cutoff_loc_TFR[self.timer][self.location_1] = self.total_flow_rate
-            cutoff_loc_TFR[self.timer][self.location_2] = self.total_flow_rate
-
-
-        return not (self.active_flow_rate_1 < cafr_1 and self.active_flow_rate_2 < cafr_2
-                    and self.total_flow_rate < ctfr_1 and self.total_flow_rate < ctfr_2)
+        return not (self.active_flow_rate_1 < cafr_1 and self.active_flow_rate_2 < cafr_2 and self.total_flow_rate < ctfr)
 
     def open_valve(self, valve_db):
+        if self.g_open_valves:
+            self.open_valves = copy.copy(self.open_valves)
+            self.g_open_valves = False
+
         if self.timer%2 == 1: #INVERT BECAUSE UPDATE FLOW RATE IS CALLED FIRST
-            self.open_valves += '-' + self.location_1
+            self.open_valves.append(self.location_1)
             self.active_flow_rate_1 += valve_db[self.location_1].flow_rate
-            self.location_list_1 = ''
+            self.location_list_1 = set()
+            self.g_location_list_1 = False
 
         else:
-            self.open_valves += '-' + self.location_2
+            self.open_valves.append(self.location_2)
             self.active_flow_rate_2 += valve_db[self.location_2].flow_rate
-            self.location_list_2 = ''
+            self.location_list_2 = set()
+            self.g_location_list_2 = False
 
 
     def fast_copy(self):
@@ -91,13 +116,8 @@ class Q:
         return q
 
 def main():
-    with open("Day16/day16.txt") as f:
+    with open("day16.txt") as f:
         lines = f.readlines()
-
-    valve_index = []
-    for item in lines:
-        valve_index.append(item.split(" ")[1])
-    print(valve_index)
 
     valve_db = {}
     for line in lines:
