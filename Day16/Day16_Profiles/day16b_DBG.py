@@ -57,6 +57,11 @@ class Q:
         self.location_list_1, self.g_location_list_1 = loc_list(location_list_1)
         self.location_list_2, self.g_location_list_2 = loc_list(location_list_2)
 
+        #DEBUG
+        self.dbg_flow_hist = []
+        self.dbg_loc_hist = []
+        self.dbg_valve_timer = []
+
     def update_flow_counter(self):
         if self.timer%2 == 0:
             if self.g_location_list_1:
@@ -65,6 +70,8 @@ class Q:
             self.location_list_1.add(self.location_1)
 
             self.total_flow_rate += self.active_flow_rate_1 + self.active_flow_rate_2
+            self.dbg_flow_hist.append(self.active_flow_rate_1 + self.active_flow_rate_2)
+            self.dbg_loc_hist.append((self.location_1, self.location_2))
 
         else:
             if self.g_location_list_2:
@@ -88,6 +95,7 @@ class Q:
         return not (total_afr < cafr and self.total_flow_rate < ctfr)
 
     def open_valve(self, valve_db):
+        self.dbg_valve_timer.append(int(self.timer/2+0.5))
         if self.g_open_valves:
             self.open_valves = copy.copy(self.open_valves)
             self.g_open_valves = False
@@ -109,6 +117,9 @@ class Q:
         q = Q(self.location_1, self.location_2, self.timer, self.open_valves, self.total_flow_rate,
                  self.active_flow_rate_1, self.active_flow_rate_2, self.location_list_1, self.location_list_2,
                  self.done_1, self.done_2)
+        q.dbg_flow_hist = copy.copy(self.dbg_flow_hist)
+        q.dbg_loc_hist = copy.copy(self.dbg_loc_hist)
+        q.dbg_valve_timer = copy.copy(self.dbg_valve_timer)
         return q
 
 def main():
@@ -151,7 +162,10 @@ def main():
         nonlocal best_flow
         if qt.timer >= END_TIME:
             if qt.total_flow_rate > best_flow:  # and str(qt.open_valves) == str(correct_v) and str(qt.turn_time) == str(correct_t):
-                print("Found solution with flow rate: ", qt.total_flow_rate)
+                print("Found solution with flow rate: ", qt.total_flow_rate,
+                      qt.active_flow_rate_1 + qt.active_flow_rate_2, qt.open_valves, qt.dbg_flow_hist,
+                      len(qt.dbg_flow_hist), qt.dbg_loc_hist, qt.dbg_valve_timer, qt.timer, sep='\n')
+                print()
                 best_flow = qt.total_flow_rate
         else:
             queue.append(qt)
@@ -216,8 +230,8 @@ def main():
             add_q(q)
 
         if q.done_1 and q.done_2 and q.timer%2 == 1:
-            # while q.timer < END_TIME:
-            #     q.update_flow_counter()
-            q.total_flow_rate += (q.active_flow_rate_1 + q.active_flow_rate_2) * int((END_TIME - q.timer)/2)
-            q.timer = END_TIME
+            while q.timer < END_TIME:
+                q.update_flow_counter()
+            #q.total_flow_rate = (q.active_flow_rate_1 + q.active_flow_rate_2) * int((END_TIME - q.timer)/2)
+            #q.timer = END_TIME
             add_q(q)
