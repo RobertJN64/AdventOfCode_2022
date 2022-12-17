@@ -49,13 +49,13 @@ class Q:
             self.location_list = location_list
             self.g_location_list = True
 
-    def update_flow_counter(self, skipahead = 1):
-        self.total_flow_rate += self.active_flow_rate * skipahead
+    def update_flow_counter(self):
+        self.total_flow_rate += self.active_flow_rate
         if self.g_location_list:
             self.location_list = copy.copy(self.location_list)
             self.g_location_list = False
         self.location_list.add(self.location)
-        self.timer += skipahead
+        self.timer += 1
 
         cafr = cutoff_loc_AFR[self.timer].get(self.location, -1)
         ctfr = cutoff_loc_TFR[self.timer].get(self.location, -1)
@@ -95,26 +95,6 @@ def main():
                     break
             else:
                 tunnels.append(Tunnel(v.id, path, 1))
-
-    # STEP 2: Combine tunnels with 0 flow rate middle and exactly 2 exits
-    for v in valve_db.values():
-        if v.flow_rate == 0 and len(v.paths) == 2:
-            t_comb_list = []
-            for t in tunnels:
-                if t.point_a == v.id or t.point_b == v.id:
-                    t_comb_list.append(t)
-
-            assert len(t_comb_list) == 2
-            for item in t_comb_list:
-                tunnels.remove(item)
-            t_shared_points = set()
-            for t in t_comb_list:
-                t_shared_points.add(t.point_a)
-                t_shared_points.add(t.point_b)
-            t_shared_points.remove(v.id)
-            t_shared_points = list(t_shared_points)
-            tunnels.append(
-                Tunnel(t_shared_points[0], t_shared_points[1], t_comb_list[0].length + t_comb_list[1].length))
 
     print(len(tunnels), tunnels)
 
@@ -160,10 +140,8 @@ def main():
         for t in tunnel_hash_table[q.location]:
             def check_travel(current, target):
                 if current == q.location and target not in q.location_list:
-                    if q.timer + t.length > END_TIME:
-                        return
                     qt = Q(q.location, q.timer, q.open_valves, q.total_flow_rate, q.active_flow_rate, q.location_list)
-                    if qt.update_flow_counter(t.length):
+                    if qt.update_flow_counter():
                         qt.location = target
                         add_q(qt)
 
