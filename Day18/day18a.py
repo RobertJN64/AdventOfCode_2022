@@ -19,7 +19,6 @@ def main():
 
                 for p2 in data:
                     if p[0] == p2[0] and p[1] == p2[1] and p[2] == p2[2]:
-                        print("Match found", point, p, p2)
                         break
                 else:
                     SA += 1
