@@ -32,7 +32,7 @@ class BP:
         self.geode = handle_line(items[3].strip())
 
 class Q:
-    def __init__(self):
+    def __init__(self, goal):
         self.ore_r = 1 #Start with one ore robot
         self.ore = 0
         self.clay_r = 0
@@ -43,6 +43,7 @@ class Q:
         self.geode = 0
 
         self.timer = 0
+        self.goal = goal
 
     def update(self):
         self.timer += 1
@@ -52,72 +53,62 @@ class Q:
         self.geode += self.geode_r
 
     def __repr__(self):
-        return str([self.ore, self.clay, self.obsid, self.geode]) + " | " + str([self.ore_r, self.clay_r, self.geode_r, self.obsid_r])
+        return str([self.ore, self.clay, self.obsid, self.geode]) + " | " + str([self.ore_r, self.clay_r, self.obsid_r, self.geode_r])
 
 
 def can_afford(q: Q, bp: BP):
-    r = []
-    for cost in [bp.ore, bp.clay, bp.obsid, bp.geode]:
-        r.append(cost.ore <= q.ore and cost.clay <= q.clay and cost.obsid <= q.obsid)
-    return r
+    cost = [bp.ore, bp.clay, bp.obsid, bp.geode][q.goal]
+    return cost.ore <= q.ore and cost.clay <= q.clay and cost.obsid <= q.obsid
+
 
 def max_geodes(bp: BP):
-    q = Q()
-    q.update()
-    queue = [q]
+    queue = [Q(i) for i in range(0, 4)]
 
     m_geodes = 0
     def add_qt(nqt: Q):
         nonlocal m_geodes
-        if nqt.timer >= 15:
+        #print(nqt.timer)
+        if nqt.timer >= 22:
             #print(nqt)
             if nqt.geode > m_geodes:
                 m_geodes = nqt.geode
+                print(nqt)
                 print("Found solution:", m_geodes)
         else:
             queue.append(nqt)
 
-    counter = 0
+    def add_all_qt(nqt: Q):
+        for i in range(0, 4):
+            qt = copy.deepcopy(nqt)
+            qt.goal = i
+            add_qt(qt)
+
     while queue:
         q = queue.pop()
-        if counter%1000 == 0:
-            print(len(queue))
-        counter += 1
-        ca = can_afford(q, bp)
-
-        if ca[0] and ca[1] and ca[2] and ca[3]:
-            continue
-
-        if ca[0]:
-            qt = copy.deepcopy(q)
-            qt.ore_r += 1
-            qt.ore -= bp.ore.ore
-            qt.clay -= bp.ore.clay
-            qt.obsid -= bp.ore.obsid
-            add_qt(qt)
-        if ca[1]:
-            qt = copy.deepcopy(q)
-            qt.clay_r += 1
-            qt.ore -= bp.clay.ore
-            qt.clay -= bp.clay.clay
-            qt.obsid -= bp.clay.obsid
-            add_qt(qt)
-        if ca[2]:
-            qt = copy.deepcopy(q)
-            qt.obsid_r += 1
-            qt.ore -= bp.obsid.ore
-            qt.clay -= bp.obsid.clay
-            qt.obsid -= bp.obsid.obsid
-            add_qt(qt)
-        if ca[3]:
-            qt = copy.deepcopy(q)
-            qt.geode_r += 1
-            qt.ore -= bp.geode.ore
-            qt.clay -= bp.geode.clay
-            qt.obsid -= bp.geode.obsid
-            add_qt(qt)
         q.update()
-        add_qt(q)
+        #print(len(queue))
+        if can_afford(q, bp):
+            if q.goal == 0:
+                q.ore_r += 1
+                cost = bp.ore
+            elif q.goal == 1:
+                q.clay_r += 1
+                cost = bp.clay
+            elif q.goal == 2:
+                q.obsid_r += 1
+                cost = bp.obsid
+            elif q.goal == 3:
+                q.geode_r += 1
+                cost = bp.geode
+            else:
+                raise UserWarning(f"Invalid goal {q.goal}")
+
+            q.ore -= cost.ore
+            q.clay -= cost.clay
+            q.obsid -= cost.obsid
+            add_all_qt(q)
+        else:
+            add_qt(q)
 
 def main():
     with open("Day19/day19.txt") as f:
@@ -127,7 +118,3 @@ def main():
     for bp in bps:
         max_geodes(bp)
         quit()
-
-#SMART DECISION MAKING:
-# IF YOU CAN BUY GEODE - BUY GEODE
-# ONLY BUY ITEMS IF THEY PAY FOR THEMSELVES
