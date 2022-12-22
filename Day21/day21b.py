@@ -1,5 +1,4 @@
 import copy
-import traceback
 
 skip = "humn"
 root_pair = ["rpjn", "ghjl"]
