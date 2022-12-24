@@ -53,7 +53,7 @@ class Q:
         self.geode += self.geode_r
 
     def __repr__(self):
-        return str([self.ore, self.clay, self.obsid, self.geode]) + " | " + str([self.ore_r, self.clay_r, self.obsid_r, self.geode_r])
+        return str(self.timer) + " _ " + str(self.goal) + ": " + str([self.ore, self.clay, self.obsid, self.geode]) + " | " + str([self.ore_r, self.clay_r, self.obsid_r, self.geode_r])
 
 
 def can_afford(q: Q, bp: BP):
@@ -64,12 +64,11 @@ def can_afford(q: Q, bp: BP):
 def max_geodes(bp: BP):
     queue = [Q(i) for i in range(0, 4)]
 
+
     m_geodes = 0
     def add_qt(nqt: Q):
         nonlocal m_geodes
-        #print(nqt.timer)
-        if nqt.timer >= 22:
-            #print(nqt)
+        if nqt.timer >= 20:
             if nqt.geode > m_geodes:
                 m_geodes = nqt.geode
                 print(nqt)
@@ -79,26 +78,34 @@ def max_geodes(bp: BP):
 
     def add_all_qt(nqt: Q):
         for i in range(0, 4):
-            qt = copy.deepcopy(nqt)
+            qt = copy.copy(nqt)
+            qt.update()
             qt.goal = i
             add_qt(qt)
 
+    counter = 0
     while queue:
+        if counter%10000 == 0:
+            print(counter, queue[0].timer, len(queue))
+        counter += 1
         q = queue.pop()
-        q.update()
         #print(len(queue))
         if can_afford(q, bp):
             if q.goal == 0:
                 q.ore_r += 1
+                q.ore -= 1 #cancels out new purchase
                 cost = bp.ore
             elif q.goal == 1:
                 q.clay_r += 1
+                q.clay -= 1
                 cost = bp.clay
             elif q.goal == 2:
                 q.obsid_r += 1
+                q.obsid -= 1
                 cost = bp.obsid
             elif q.goal == 3:
                 q.geode_r += 1
+                q.geode -= 1
                 cost = bp.geode
             else:
                 raise UserWarning(f"Invalid goal {q.goal}")
@@ -107,7 +114,9 @@ def max_geodes(bp: BP):
             q.clay -= cost.clay
             q.obsid -= cost.obsid
             add_all_qt(q)
+
         else:
+            q.update()
             add_qt(q)
 
 def main():
