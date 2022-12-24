@@ -1,3 +1,5 @@
+import copy
+
 class Cost:
     def __init__(self, ore, clay, obsid):
         self.ore = ore
@@ -30,18 +32,17 @@ class BP:
         self.geode = handle_line(items[3].strip())
 
 class Q:
-    def __init__(self, goal, ore_r = 1, ore = 0, clay_r = 0, clay = 0, obsid_r = 0, obsid = 0, geode_r = 0, geode = 0,
-                 timer = 0):
-        self.ore_r = ore_r #Start with one ore robot
-        self.ore = ore
-        self.clay_r = clay_r
-        self.clay = clay
-        self.obsid_r = obsid_r
-        self.obsid = obsid
-        self.geode_r = geode_r
-        self.geode = geode
+    def __init__(self, goal):
+        self.ore_r = 1 #Start with one ore robot
+        self.ore = 0
+        self.clay_r = 0
+        self.clay = 0
+        self.obsid_r = 0
+        self.obsid = 0
+        self.geode_r = 0
+        self.geode = 0
 
-        self.timer = timer
+        self.timer = 0
         self.goal = goal
 
     def update(self):
@@ -67,7 +68,7 @@ def max_geodes(bp: BP):
     m_geodes = 0
     def add_qt(nqt: Q):
         nonlocal m_geodes
-        if nqt.timer >= 24:
+        if nqt.timer >= 20:
             if nqt.geode > m_geodes:
                 m_geodes = nqt.geode
                 print(nqt)
@@ -77,17 +78,16 @@ def max_geodes(bp: BP):
 
     def add_all_qt(nqt: Q):
         for i in range(0, 4):
-            qt = Q(nqt.goal, nqt.ore_r, nqt.ore, nqt.clay_r, nqt.clay, nqt.obsid_r, nqt.obsid, nqt.geode_r, nqt.geode,
-                   nqt.timer)
+            qt = copy.copy(nqt)
             qt.update()
             qt.goal = i
             add_qt(qt)
 
-    #counter = 0
+    counter = 0
     while queue:
-        # if counter%10000 == 0:
-        #     print(counter, queue[0].timer, len(queue))
-        # counter += 1
+        if counter%10000 == 0:
+            print(counter, queue[0].timer, len(queue))
+        counter += 1
         q = queue.pop()
         #print(len(queue))
         if can_afford(q, bp):
@@ -119,14 +119,11 @@ def max_geodes(bp: BP):
             q.update()
             add_qt(q)
 
-    return m_geodes
-
 def main():
     with open("Day19/day19.txt") as f:
         lines = f.readlines()
     bps = [BP(line) for line in lines]
 
     for bp in bps:
-        print("NEW BP")
-        m = max_geodes(bp)
-        print(m)
+        max_geodes(bp)
+        quit()
